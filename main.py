@@ -79,6 +79,36 @@ def get_item(
 
     return item
 
+@item_router.get("/name/{item_name}", response_model=Optional[ItemSchema])
+def get_item_name(
+    item_name: str,
+    db: Session = Depends(get_db)
+):
+    item: Optional[Item] = db.query(Item).filter(Item.name == item_name).first()
+
+    return item
+
+@item_router.get("/", response_model=List[ItemSchema])
+def get_items(
+    db: Session = Depends(get_db)
+):
+    items: List[Item] = db.query(Item).all()
+
+    return items
+
+@item_router.put("/update/{item_id}", response_model=ItemSchema)
+async def update_item(
+    item_id: int,
+    item: AddItemSchema,
+    db: Session = Depends(get_db)
+):
+    db_item: Item = Item(**item.dict())
+    item: Optional[Item] = db.query(Item).filter(Item.id == item_id).first()
+    item.nombreItems =db_item.nombreItems
+    db.commit()
+    db.refresh(item)
+    return item
+
 
 @item_router.delete("/", response_model=Optional[ItemSchema])
 def remove_item(
@@ -91,6 +121,15 @@ def remove_item(
     
     return item
 
+@item_router.delete("/deleteItems", response_model=List[ItemSchema])
+def remove_all(
+    db: Session = Depends(get_db)
+):
+    items: List[Item] = db.query(Item).all()
+    for i in items:
+        db.delete(i)
+        db.commit()
+    return items
 
 payments_router = APIRouter(
     prefix="/payments",
